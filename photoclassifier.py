@@ -1,3 +1,5 @@
+import sys
+import os
 import cv2
 import cvlib as cv
 from cvlib.object_detection import draw_bbox
@@ -5,12 +7,13 @@ import json
 import piexif
 import piexif.helper
 import argparse
+import glob
 
 class ObjectDetector():
     def __init__(self, filename):
         self.filename = filename
 
-    def load_photo(self):
+    def load(self):
         self.img_input = cv2.imread(self.filename)
 
     def detect_objects(self):
@@ -40,15 +43,15 @@ class ExifMod():
         self.objects = {}
         self.filename = filename
 
+    def _encode_xpkeywords(self, s):
+        b = s.encode('utf-16-le') + b'\x00\x00'
+        return tuple([int(i) for i in b])
+
     def load(self):
         self.exif_dict = piexif.load(self.filename)
 
     def write(self):
         piexif.insert(piexif.dump(self.exif_dict), self.filename)
-
-    def _encode_xpkeywords(self, s):
-        b = s.encode('utf-16-le') + b'\x00\x00'
-        return tuple([int(i) for i in b])
 
     def add_usercomment(self, comment):
         self.exif_dict["Exif"][piexif.ExifIFD.UserComment] = piexif.helper.UserComment.dump(comment, encoding="unicode")
@@ -56,13 +59,13 @@ class ExifMod():
     def add_keywords(self, keywords):
         self.exif_dict["0th"][piexif.ImageIFD.XPKeywords] = self._encode_xpkeywords(keywords)
 
-class Photo():
+class Image():
     def __init__(self, filename):
         self.filename = filename
 
     def detect_objects(self):
         objdetector = ObjectDetector(self.filename)
-        objdetector.load_photo()
+        objdetector.load()
         objdetector.detect_objects()
         self.objects = objdetector.pack_todict()
         self.objects_str = objdetector.get_objects_str()
@@ -74,15 +77,37 @@ class Photo():
         exif.add_usercomment(json.dumps(self.objects))
         exif.write()
 
-def InitArgParser():
+def init_arg_parser():
     argparser = argparse.ArgumentParser(description='PhotoTagger - uses Machine Learning to detect objects in photos. \
         PhotoTagger adds keywords and other information to JPEG metadata based on the objects detected.')
 
-    argparser.add_argument('-f', '--filename', dest='filename', type=str, help='Photo filename', default=False)
+    argparser.add_argument('-f', '--filename', dest='filename', type=str, help='Photo filename')
+    argparser.add_argument('-d', '--directory', dest='directory', type=str, help='Directory to recursively find and tag all *.jpg an *.jpeg files in.')
     return argparser.parse_args()
 
-args = InitArgParser()
+def find_photo_files(path):
+    extensions = [ ".[jJ][pP][gG]", ".[jJ][pP][eE][gG]" ]
+    files = []
+    for extension in extensions:
+        for f in glob.glob(path + "**/*" + extension, recursive=True):
+            files.append(f)
+    return files
 
-photo = Photo(args.filename)
-photo.detect_objects()
-photo.update_exif()
+args = init_arg_parser()
+
+if args.filename != None:
+    image = Image(args.filename)
+    image.detect_objects()
+    image.update_exif()
+    sys.exit()
+
+if args.directory != None:
+    files = find_photo_files(args.directory)
+    print(files)
+
+    for file in files:
+        image = Image(file)
+        image.detect_objects()
+        image.update_exif()
+
+    sys.exit()
