@@ -1,5 +1,5 @@
 ### What is this?
-This app detects objects in photos using Computer Vision and automatically adds keywords to JPEG Exif metadata. The keywords are sorted by the area of objects. It can tag a single photo, or recursively tag photos in a directory. The app is written in Python and is based on an open-source Computer Vision library  [cvlib](https://github.com/arunponnusamy/cvlib) from [arunponnusamy](https://github.com/arunponnusamy). The library uses a [pre-trained YOLO v3 model](https://pjreddie.com/darknet/yolo/), which is capable of detecting 80 different objects.
+This app detects objects in photos using Computer Vision and automatically adds keywords to JPEG Exif metadata. The keywords are sorted by the area of objects. It can tag a single photo, or recursively tag photos in a directory. The app is written in Python and is based on an open-source Computer Vision library  [cvlib](https://github.com/arunponnusamy/cvlib) from [arunponnusamy](https://github.com/arunponnusamy). The library uses a [pre-trained YOLO v3 model](https://pjreddie.com/darknet/yolo/), which is capable of detecting [80 different objects](https://github.com/arunponnusamy/object-detection-opencv/blob/master/yolov3.txt).
 
 ### Dependencies
 * [OpenCV](https://pypi.org/project/opencv-python/)
